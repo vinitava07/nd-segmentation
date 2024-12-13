@@ -2,7 +2,7 @@
 #include <string.h>
 #include "../include/image.hpp"
 #include <chrono>
-#include "graph.hpp"
+#include "../include/graph.hpp"
 #include <random>
 
 using namespace std;
@@ -31,17 +31,17 @@ void writeImage(Image::Pixel *rImg, Image *img, Graph *g)
     fclose(saida);
 }
 
-//NADA IMPLEMENTADO AINDA SÓ A PARTE 1 "CLONADA"
-//NADA IMPLEMENTADO AINDA SÓ A PARTE 1 "CLONADA"
+//NADA IMPLEMENTADO AINDA SÓ A PARTE 2 "CLONADA"
+//NADA IMPLEMENTADO AINDA SÓ A PARTE 2 "CLONADA"
 
-//NADA IMPLEMENTADO AINDA SÓ A PARTE 1 "CLONADA"
+//NADA IMPLEMENTADO AINDA SÓ A PARTE 2 "CLONADA"
 
-//NADA IMPLEMENTADO AINDA SÓ A PARTE 1 "CLONADA"
+//NADA IMPLEMENTADO AINDA SÓ A PARTE 2 "CLONADA"
 
 int main(int argc, char const *argv[])
 {
 
-    char imageName[40] = "flower";
+    char imageName[40] = "flamengo";
     char fileName[40] = "";
     char prefix[30] = "../images/";
 
@@ -85,7 +85,8 @@ int main(int argc, char const *argv[])
 
     chrono::steady_clock sc; // create an object of `steady_clock` class
     auto start = sc.now();
-    Graph *g = new Graph(graphSize, image, min, threshold);
+    //grafo implementado com lista de adjacencia
+    Graph *g = new Graph(graphSize, image, threshold);
     // criar o grafo relativo a imagem (pode ser melhorado)
     g->imageToGraph(image);
     // g->freeImage(image);
