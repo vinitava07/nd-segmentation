@@ -3,6 +3,7 @@
 #include <vector>
 #include <list>
 #include <image.hpp>
+
 class Vizinho
 {
 private:
@@ -22,22 +23,6 @@ public:
         return weight > v.weight;
     }
 };
-class Edge
-{
-private:
-    /* data */
-public:
-    int value;
-    Vizinho *v1;
-    Vizinho *v2;
-    bool operator<(const Edge &e1) const
-    {
-        return value < e1.value;
-    }
-    Edge(/* args */) : v1(), v2(), value(0){};
-    Edge(Vizinho *p1, Vizinho *p2, int weight) : v1(p1), v2(p2), value(weight) {}
-    ~Edge(){};
-};
 
 class Vertex
 {
@@ -53,15 +38,47 @@ public:
     {
         adj->push_back(Vizinho(pixel, edgeWeight, label, weight));
     }
-    Vertex(float w) : adj(new std::vector<Vizinho>()), weight(w){};
-    Vertex() : adj(new std::vector<Vizinho>()), weight(0){};
+    Vertex(float w) : adj(new std::vector<Vizinho>()), weight(w) {};
+    Vertex() : adj(new std::vector<Vizinho>()), weight(0) {};
     ~Vertex() = default;
     bool operator<(const Vertex &v) const
     {
         std::cout << weight << std::endl;
         return weight > v.weight;
     }
-    //compara vertices pelo peso, era usado pelo djikstra
+    float getVizinho(int label)
+    {
+        for (int i = 0; i < adj->size(); i++)
+        {
+            if (adj->at(i).label == label)
+            {
+                return adj->at(i).weight;
+            }
+        }
+        return 0;
+    }
+    void aumentaPesoVizinho(int label, float peso)
+    {
+        for (int i = 0; i < adj->size(); i++)
+        {
+            if (adj->at(i).label == label)
+            {
+                adj->at(i).weight += peso;
+            }
+        }
+    }
+    void diminuiPesoVizinho(int label, float peso)
+    {
+        for (int i = 0; i < adj->size(); i++)
+        {
+            if (adj->at(i).label == label)
+            {
+                adj->at(i).weight -= peso;
+            }
+        }
+    }
+
+    // compara vertices pelo peso, era usado pelo djikstra
     struct CompareVertex
     {
         bool operator()(Vertex *const &v1, Vertex *const &v2)

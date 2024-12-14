@@ -41,7 +41,7 @@ void writeImage(Image::Pixel *rImg, Image *img, Graph *g)
 int main(int argc, char const *argv[])
 {
 
-    char imageName[40] = "flamengo";
+    char imageName[40] = "teste";
     char fileName[40] = "";
     char prefix[30] = "../images/";
 
@@ -88,9 +88,9 @@ int main(int argc, char const *argv[])
     //grafo implementado com lista de adjacencia
     Graph *g = new Graph(graphSize, image, threshold);
     // criar o grafo relativo a imagem (pode ser melhorado)
+    g->readSeed(imageName);
     g->imageToGraph(image);
     // g->freeImage(image);
-
     // realiza a segmentação
     g->segmentation();
     

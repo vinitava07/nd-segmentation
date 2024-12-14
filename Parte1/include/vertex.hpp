@@ -2,7 +2,8 @@
 #define VERTEX
 #include <vector>
 #include <list>
-#include <image.hpp>
+#include "image.hpp"
+
 class Vizinho
 {
 private:
