@@ -14,7 +14,7 @@
 #include "../include/vertex.hpp"
 
 #define WIDTH 4
-#define SIGMA 30.0
+#define SIGMA 10.0
 
 using namespace std;
 class Graph
@@ -74,7 +74,7 @@ public:
         // Voltar ao início do arquivo para ler os dados
         rewind(fp);
 
-        Seed *seeds = (Seed *)malloc(nseeds * sizeof(Seed));
+        seeds = (Seed *)malloc(nseeds * sizeof(Seed));
         if (seeds == NULL)
         {
             fprintf(stderr, "Falha ao alocar memória para seeds\n");
@@ -100,8 +100,6 @@ public:
         //            i, seeds[i].x, seeds[i].y,
         //            (seeds[i].seedType == OBJECT) ? "OBJECT" : "BACKGROUND");
         // }
-
-        free(seeds);
     }
 
     void imageToGraph(Image *image)
@@ -121,63 +119,29 @@ public:
             }
         }
 
-        // ANTIGA PARTE DE COLOCAR AS SEEDS
-        //  cout << nseeds << endl;
-        //  for (int i = 0; i < nseeds; i++)
-        //  {
-        //      int x = seeds[i].x;
-        //      int y = seeds[i].y;
-        //      int mk = seeds[i].mk;
-        //      if (x >= 0 && x < width && y >= 0 && y < height)
-        //      {
-        //          adj[y * width + x].weight = 0;
-        //          adj[y * width + x].seed = mk;
-        //      }
-        //  }
-
         // liga os vertices pela vizinhaça dos 8 lados na imagem
         for (int i = 0; i < height; i++)
         {
             for (int j = 0; j < width; j++)
             {
-                if (i + 1 < height && j + 1 < width)
-                {
-                    bp = addEdge(i, j, i + 1, j + 1, image->img[i + 1][j + 1]);
-                    Kmax = std::max(Kmax, bp);
-                }
-                if (j + 1 < width)
+                if (j + 1 < width) // Vizinho à direita
                 {
                     bp = addEdge(i, j, i, j + 1, image->img[i][j + 1]);
                     Kmax = std::max(Kmax, bp);
                 }
-                if (i + 1 < height)
+                if (i + 1 < height) // Vizinho abaixo
                 {
                     bp = addEdge(i, j, i + 1, j, image->img[i + 1][j]);
                     Kmax = std::max(Kmax, bp);
                 }
-                if (i + 1 < height && j - 1 >= 0)
-                {
-                    bp = addEdge(i, j, i + 1, j - 1, image->img[i + 1][j - 1]);
-                    Kmax = std::max(Kmax, bp);
-                }
-                if (j - 1 >= 0)
+                if (j - 1 >= 0) // Vizinho à esquerda
                 {
                     bp = addEdge(i, j, i, j - 1, image->img[i][j - 1]);
                     Kmax = std::max(Kmax, bp);
                 }
-                if (i - 1 >= 0)
+                if (i - 1 >= 0) // Vizinho acima
                 {
                     bp = addEdge(i, j, i - 1, j, image->img[i - 1][j]);
-                    Kmax = std::max(Kmax, bp);
-                }
-                if (i - 1 >= 0 && j + 1 < width)
-                {
-                    bp = addEdge(i, j, i - 1, j + 1, image->img[i - 1][j + 1]);
-                    Kmax = std::max(Kmax, bp);
-                }
-                if (i - 1 >= 0 && j - 1 >= 0)
-                {
-                    bp = addEdge(i, j, i - 1, j - 1, image->img[i - 1][j - 1]);
                     Kmax = std::max(Kmax, bp);
                 }
                 adj[i * width + j].check = true;
@@ -197,44 +161,39 @@ public:
         delete image->pixels;
     }
 
-    // void linkSourceAndSink(Image *image)
-    // {
-    //     for (int i = 0; i < nseeds; i++)
-    //     {
-
-    //         int destLabel = adj[destI * width + destJ].label;
-    //         if (seeds[i].seedType == OBJECT)
-    //         {
-    //             adj[source].addVertex(image->img[seeds->x][seeds->y], Kmax, destLabel, 0);
-    //         }
-    //         else
-    //         {
-    //             adj[sink].addVertex(image->img[seeds->x][seeds->y], Kmax, destLabel, 0);
-    //         }
-    //     }
-    // }
+    void linkSourceAndSink(Image *image)
+    {
+        for (int i = 0; i < nseeds; i++)
+        {
+            int vertexIndex = seeds[i].y * width + seeds[i].x;
+            if (seeds[i].seedType == OBJECT)
+            {
+                adj[source].addVertex(image->img[seeds[i].y][seeds[i].x], Kmax, vertexIndex);
+            }
+            else
+            {
+                adj[vertexIndex].addVertex(image->img[seeds[i].y][seeds[i].x], Kmax, sink);
+            }
+        }
+    }
 
     void addPixel(int i, int j, Image::Pixel pixel, int label)
     {
         adj[i * width + j].pixel = pixel;
         adj[i * width + j].label = label;
-        adj[i * width + j].weight = INT32_MAX;
     }
 
-    float addEdge(int i, int j, int destI, int destJ, Image::Pixel p)
+    float addEdge(int i, int j, int destI, int destJ, Image::Pixel neighborPixel)
     {
         // adiciona a aresta pro vertice e pro seu vizinho ida e volta
-        float weight = (boundaryPenalty(p.blue, adj[i * width + j].pixel.blue));
+        float weight = (boundaryPenalty(adj[i * width + j].pixel.blue, neighborPixel.blue));
         if (!adj[destI * width + destJ].check)
         {
             int currLabel = adj[i * width + j].label;
             int destLabel = adj[destI * width + destJ].label;
 
-            int currW = adj[i * width + j].weight;
-            int destW = adj[destI * width + destJ].weight;
-
-            adj[i * width + j].addVertex(p, weight, destLabel, destW);
-            adj[destI * width + destJ].addVertex(adj[i * width + j].pixel, weight, currLabel, currW);
+            adj[i * width + j].addVertex(neighborPixel, weight, destLabel);
+            adj[destI * width + destJ].addVertex(adj[i * width + j].pixel, weight, currLabel);
         }
         return weight;
     }
@@ -256,41 +215,37 @@ public:
     float boundaryPenalty(unsigned char ip, unsigned char iq)
     {
         // Calculando a diferença entre os dois valores de intensidade
-        float diff = static_cast<float>(ip) - static_cast<float>(iq);
+        // float diff = static_cast<float>(ip) - static_cast<float>(iq);
 
         // Calculando a penalidade usando a fórmula Gaussiana
-        float bp = 100 * exp(-pow(diff, 2) / (2 * pow(SIGMA, 2)));
-
+        float bp = 100 * exp(-pow(static_cast<int>(ip) - static_cast<int>(iq), 2) / (2 * pow(30, 2)));
         return bp;
     }
 
     bool bfs(Vertex *residualGraph, int *parent)
     {
         std::queue<int> q;
-        bool *visited = new bool[graphSize];
-        for (int i = 0; i < graphSize; i++)
-        {
-            visited[i] = false;
-        }
+        bool *visited = new bool[graphSize]{};
 
         q.push(source);
         visited[source] = true;
         parent[source] = -1;
-
         while (!q.empty())
         {
             int u = q.front();
             q.pop();
-            for (int i = 0; i < graphSize; i++)
+            for (int v = 0; v < graphSize; v++)
             {
-                if (!visited[i] && residualGraph[u].getVizinho(i) > 0)
+                if (!visited[v] && residualGraph[u].getVizinho(v) > 0)
                 {
-                    q.push(i);
-                    parent[i] = u;
-                    visited[i] = true;
+
+                    q.push(v);
+                    parent[v] = u;
+                    visited[v] = true;
                 }
             }
         }
+
         return visited[sink];
     }
 
@@ -302,68 +257,97 @@ public:
         {
             int v = stack.top();
             stack.pop();
+
             if (!visited[v])
             {
                 visited[v] = true;
-                for (int i = 0; i < graphSize; i++)
+                for (const auto &neighbor : (residualGraph[v].vizinhos))
                 {
-                    if (residualGraph[v].getVizinho(i) > 0 && !visited[u])
+                    if (!visited[neighbor.label] && neighbor.edge > 0)
                     {
-                        stack.push(u);
+                        stack.push(neighbor.label);
                     }
-                    
                 }
-                
             }
-            
         }
     }
 
-    void segmentation()
+    bool *segmentation()
     {
-        std::cout << "Clonando grafo";
-
+        std::cout << "COMECOU: " << endl;
         Vertex *residualGraph = new Vertex[graphSize];
-        int *parent = new int[graphSize];
+        int *parent = new int[graphSize]{};
 
         for (int i = 0; i < graphSize; i++)
         {
             // Copia os valores do vértice
-            residualGraph[i].weight = adj[i].weight;
             residualGraph[i].label = adj[i].label;
             residualGraph[i].check = adj[i].check;
-            residualGraph[i].seed = adj[i].seed;
 
             // Copia os vizinhos (adjacentes)
-            for (const auto vizinho : *adj[i].adj)
+            for (const auto vizinho : adj[i].vizinhos)
             {
-                residualGraph[i].addVertex(vizinho.p, vizinho.edge, vizinho.label, vizinho.weight);
+                residualGraph[i].addVertex(vizinho.p, vizinho.edge, vizinho.label);
             }
         }
-        float pathFlow = INT32_MAX;
+        std::cout << "BFS: " << endl;
 
         while (bfs(residualGraph, parent))
         {
+            float pathFlow = INT32_MAX;
             int v = sink;
+            // std::cout << "loop1: " << endl;
             while (v != source)
             {
                 int u = parent[v];
                 pathFlow = std::min(pathFlow, residualGraph[u].getVizinho(v));
                 v = parent[v];
             }
+            
             v = sink;
+
             while (v != source)
             {
                 int u = parent[v];
-                residualGraph[u].aumentaPesoVizinho(v, pathFlow);
-                residualGraph[v].diminuiPesoVizinho(u, pathFlow);
+                residualGraph[u].aumentaPesoVizinho(v, -pathFlow);
+                residualGraph[v].aumentaPesoVizinho(u, pathFlow);
                 v = parent[v];
             }
         }
 
-        bool *visited = new bool[graphSize];
+        bool *visited = new bool[graphSize]{};
+        std::cout << "DFS: " << endl;
+        dfs(residualGraph, visited);
 
-        dfs(residualGraph, source, visited);
+        std::vector<std::tuple<int, int>> cuts;
+
+        for (int i = 0; i < graphSize; i++)
+        {
+            for (int j = 0; j < adj[i].vizinhos.size(); j++)
+            {
+                if (visited[i] && !visited[adj[i].vizinhos.at(j).label])
+                {
+                    cuts.push_back(std::make_tuple(i, adj[i].vizinhos.at(j).label));
+                }
+            }
+        }
+        // for (const auto &cut : cuts)
+        // {
+        //     std::cout << "(" << std::get<0>(cut) << ", " << std::get<1>(cut) << ") ";
+        // }
+        // cout << std::endl
+        //      << cuts.size() << std::endl;
+
+        int count = 0;
+        for (int i = 0; i < graphSize; i++)
+        {
+            if (visited[i])
+            {
+                count++;
+            }
+        }
+        cout << count << endl;
+        return visited;
     }
 
     Graph(size_t v, Image *img, int t)
@@ -374,7 +358,6 @@ public:
         graphSize = (img->header.height * img->header.width) + 2;
         source = graphSize - 2;
         sink = graphSize - 1;
-        std::cout << source << " " << sink << std::endl;
         adj = new Vertex[graphSize];
         vertices = v;
     };

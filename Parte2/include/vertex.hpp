@@ -12,16 +12,15 @@ public:
     Image::Pixel p;
     float edge;
     int label;
-    float weight = INT32_MAX;
 
     // Construtor usando lista de inicialização
     Vizinho() : p(), edge(0) {}
-    Vizinho(Image::Pixel p, float e, int l, float w) : p(p), edge(e), label(l), weight(w) {}
+    Vizinho(Image::Pixel p, float e, int l) : p(p), edge(e), label(l) {}
 
-    bool operator>(const Vizinho &v) const
-    {
-        return weight > v.weight;
-    }
+    // bool operator>(const Vizinho &v) const
+    // {
+    //     return weight > v.weight;
+    // }
 };
 
 class Vertex
@@ -29,62 +28,62 @@ class Vertex
 private:
 public:
     Image::Pixel pixel;
-    std::vector<Vizinho> *adj;
-    float weight = INT32_MAX;
+    std::vector<Vizinho> vizinhos;
     int label;
     bool check = false;
-    int seed = -1;
-    void addVertex(Image::Pixel pixel, float edgeWeight, int label, float weight)
+    void addVertex(Image::Pixel pixel, float edgeWeight, int label)
     {
-        adj->push_back(Vizinho(pixel, edgeWeight, label, weight));
+        vizinhos.push_back(Vizinho(pixel, edgeWeight, label));
     }
-    Vertex(float w) : adj(new std::vector<Vizinho>()), weight(w) {};
-    Vertex() : adj(new std::vector<Vizinho>()), weight(0) {};
+    Vertex() : vizinhos(std::vector<Vizinho>()) {};
     ~Vertex() = default;
-    bool operator<(const Vertex &v) const
-    {
-        std::cout << weight << std::endl;
-        return weight > v.weight;
-    }
+    // bool operator<(const Vertex &v) const
+    // {
+    //     std::cout << weight << std::endl;
+    //     return weight > v.weight;
+    // }
     float getVizinho(int label)
     {
-        for (int i = 0; i < adj->size(); i++)
+        for (int i = 0; i < vizinhos.size(); i++)
         {
-            if (adj->at(i).label == label)
+            if (vizinhos.at(i).label == label)
             {
-                return adj->at(i).weight;
+                return vizinhos.at(i).edge;
             }
         }
         return 0;
     }
     void aumentaPesoVizinho(int label, float peso)
     {
-        for (int i = 0; i < adj->size(); i++)
+        bool encontrado = false;
+        for (int i = 0; i < vizinhos.size(); i++)
         {
-            if (adj->at(i).label == label)
+            if (vizinhos.at(i).label == label)
             {
-                adj->at(i).weight += peso;
+                vizinhos.at(i).edge += peso;
             }
         }
+        
+        
     }
     void diminuiPesoVizinho(int label, float peso)
     {
-        for (int i = 0; i < adj->size(); i++)
+        for (int i = 0; i < vizinhos.size(); i++)
         {
-            if (adj->at(i).label == label)
+            if (vizinhos.at(i).label == label)
             {
-                adj->at(i).weight -= peso;
+                vizinhos.at(i).edge -= peso;
             }
         }
     }
 
     // compara vertices pelo peso, era usado pelo djikstra
-    struct CompareVertex
-    {
-        bool operator()(Vertex *const &v1, Vertex *const &v2)
-        {
-            return v1->weight >= v2->weight;
-        }
-    };
+    // struct CompareVertex
+    // {
+    //     bool operator()(Vertex const &v1, Vertex const &v2)
+    //     {
+    //         return v1.weight >= v2.weight;
+    //     }
+    // };
 };
 #endif

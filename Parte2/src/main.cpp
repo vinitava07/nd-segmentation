@@ -6,7 +6,7 @@
 #include <random>
 
 using namespace std;
-void writeImage(Image::Pixel *rImg, Image *img, Graph *g)
+void writeImage(Image::Pixel *rImg, Image *img, bool *visitados)
 {
     FILE *saida = fopen("saida.ppm", "wb+");
     if (!saida)
@@ -24,24 +24,32 @@ void writeImage(Image::Pixel *rImg, Image *img, Graph *g)
         for (int j = 0; j < img->header.width; j++)
         {
             // fprintf(saida, "%c%c%c", rImg[(i * img->header.width) + j].red, rImg[(i * img->header.width) + j].green, rImg[(i * img->header.width) + j].blue);
-            fprintf(saida, "%c%c%c", img->img[i][j].red, img->img[i][j].green, img->img[i][j].blue);
+            if (visitados[i * img->header.width + j])
+            {
+                /* code */
+                fprintf(saida, "%c%c%c", 255, 0, 0);
+            }
+            else
+            {
+                fprintf(saida, "%c%c%c", 0, 255, 0);
+            }
         }
     }
 
     fclose(saida);
 }
 
-//NADA IMPLEMENTADO AINDA SÓ A PARTE 2 "CLONADA"
-//NADA IMPLEMENTADO AINDA SÓ A PARTE 2 "CLONADA"
+// NADA IMPLEMENTADO AINDA SÓ A PARTE 2 "CLONADA"
+// NADA IMPLEMENTADO AINDA SÓ A PARTE 2 "CLONADA"
 
-//NADA IMPLEMENTADO AINDA SÓ A PARTE 2 "CLONADA"
+// NADA IMPLEMENTADO AINDA SÓ A PARTE 2 "CLONADA"
 
-//NADA IMPLEMENTADO AINDA SÓ A PARTE 2 "CLONADA"
+// NADA IMPLEMENTADO AINDA SÓ A PARTE 2 "CLONADA"
 
 int main(int argc, char const *argv[])
 {
 
-    char imageName[40] = "teste";
+    char imageName[40] = "test1";
     char fileName[40] = "";
     char prefix[30] = "../images/";
 
@@ -78,22 +86,18 @@ int main(int argc, char const *argv[])
         image->smooth(sigma);
     }
 
-    cout << "Qual o valor minimo para o tamanho dos componentes?" << endl;
-    // cin >> min;
-    cout << "Qual o valor do threshold das arestas?" << endl;
-    // cin >> threshold;
-
     chrono::steady_clock sc; // create an object of `steady_clock` class
     auto start = sc.now();
-    //grafo implementado com lista de adjacencia
+    // grafo implementado com lista de adjacencia
     Graph *g = new Graph(graphSize, image, threshold);
     // criar o grafo relativo a imagem (pode ser melhorado)
     g->readSeed(imageName);
     g->imageToGraph(image);
+    g->linkSourceAndSink(image);
+    bool* visitados = g->segmentation();
     // g->freeImage(image);
     // realiza a segmentação
-    g->segmentation();
-    
+
     // gerando cores aleatórias para a imagem segmentada
     Image::Pixel *p = (Image::Pixel *)malloc(g->vertices * sizeof(Image::Pixel));
 
@@ -103,7 +107,7 @@ int main(int argc, char const *argv[])
         p[i].green = rand() % 255;
         p[i].blue = rand() % 255;
     }
-    writeImage(p, image, g);
+    writeImage(p, image, visitados);
 
     auto end = sc.now();                                                 // end timer (starting & ending is done by measuring the time at the moment the process started & ended respectively)
     auto time_span = static_cast<chrono::duration<double>>(end - start); // measure time span between start & end
