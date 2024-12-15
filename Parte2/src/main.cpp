@@ -6,7 +6,7 @@
 #include <random>
 
 using namespace std;
-void writeImage(Image::Pixel *rImg, Image *img, bool *visitados)
+void writeImage(Image *img, bool *visitados)
 {
     FILE *saida = fopen("saida.ppm", "wb+");
     if (!saida)
@@ -17,17 +17,13 @@ void writeImage(Image::Pixel *rImg, Image *img, bool *visitados)
     // escreve o header
     fprintf(saida, "%s\n%d %d\n%d\n", img->header.format, img->header.width, img->header.height, img->header.color);
 
-    int comp;
-    // pega a cor de cada componente
     for (int i = 0; i < img->header.height; i++)
     {
         for (int j = 0; j < img->header.width; j++)
         {
-            // fprintf(saida, "%c%c%c", rImg[(i * img->header.width) + j].red, rImg[(i * img->header.width) + j].green, rImg[(i * img->header.width) + j].blue);
             if (visitados[i * img->header.width + j])
             {
-                /* code */
-                fprintf(saida, "%c%c%c", 255, 0, 0);
+                fprintf(saida, "%c%c%c", img->img[i][j].red, img->img[i][j].green, img->img[i][j].blue);
             }
             else
             {
@@ -39,22 +35,16 @@ void writeImage(Image::Pixel *rImg, Image *img, bool *visitados)
     fclose(saida);
 }
 
-// NADA IMPLEMENTADO AINDA SÓ A PARTE 2 "CLONADA"
-// NADA IMPLEMENTADO AINDA SÓ A PARTE 2 "CLONADA"
-
-// NADA IMPLEMENTADO AINDA SÓ A PARTE 2 "CLONADA"
-
-// NADA IMPLEMENTADO AINDA SÓ A PARTE 2 "CLONADA"
-
 int main(int argc, char const *argv[])
 {
 
-    char imageName[40] = "baby";
+    char imageName[40] = "test1";
     char fileName[40] = "";
     char prefix[30] = "../images/";
 
     cout << "Qual o nome da imagem que voce deseja segmentar (sem o .ppm)" << endl;
     // cin >> imageName;
+
     strcpy(fileName, imageName);
     strcat(fileName, ".ppm");
     strcat(prefix, fileName);
@@ -63,51 +53,26 @@ int main(int argc, char const *argv[])
     image->readImage();
     size_t graphSize = image->imgSize;
 
-    int gauss = 0;
-    int threshold = 300;
-    int min = 50;
-    int grey = 1;
-    float sigma = 8.0f;
+    cout << "Transformando a imagem para escala de cinza" << endl;
 
-    cout << "Deseja transformar a imagem em preto e branco? (0) NAO - (1) SIM" << endl;
-    // cin >> grey;
-    if (grey)
-    {
-        // transforma em escala de cinza
-        image->greyScale();
-    }
-    cout << "Deseja utilizar uma mascara gaussiana? (0) NAO - (1) SIM" << endl;
-    // cin >> gauss;
-    if (gauss)
-    {
-        cout << "Qual o valor do desvio padrao? (Padrao = 0.8)" << endl;
-        // cin >> sigma;
-        // aplica filtro gaussiano
-        image->smooth(sigma);
-    }
+    // transforma em escala de cinza
+    image->greyScale();
 
     chrono::steady_clock sc; // create an object of `steady_clock` class
     auto start = sc.now();
     // grafo implementado com lista de adjacencia
-    Graph *g = new Graph(graphSize, image, threshold);
-    // criar o grafo relativo a imagem (pode ser melhorado)
+    Graph *g = new Graph(image);
+    // le as seeds
     g->readSeed(imageName);
+    // transforma a imagem em um grafo
     g->imageToGraph(image);
+    // link o source e o skin com as seeds
     g->linkSourceAndSink(image);
-    bool* visitados = g->segmentation();
-    // g->freeImage(image);
-    // realiza a segmentação
-
-    // gerando cores aleatórias para a imagem segmentada
-    Image::Pixel *p = (Image::Pixel *)malloc(g->vertices * sizeof(Image::Pixel));
-
-    for (size_t i = 0; i < g->vertices; i++)
-    {
-        p[i].red = rand() % 255;
-        p[i].green = rand() % 255;
-        p[i].blue = rand() % 255;
-    }
-    writeImage(p, image, visitados);
+    // segmenta o grafo
+    bool *visitados = g->segmentation();
+    //escreve a imagem no arquivo
+    writeImage(image, visitados);
+    g->freeImage(image);
 
     auto end = sc.now();                                                 // end timer (starting & ending is done by measuring the time at the moment the process started & ended respectively)
     auto time_span = static_cast<chrono::duration<double>>(end - start); // measure time span between start & end

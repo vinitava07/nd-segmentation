@@ -20,9 +20,6 @@ using namespace std;
 class Graph
 {
 private:
-    int height;
-    int width;
-    int threshold;
     enum SeedType
     {
         OBJECT,
@@ -36,13 +33,14 @@ private:
 
 public:
     Vertex *adj;
-    // Vertex **resultGraph;
     Seed *seeds;
     int nseeds;
-    int vertices;
     int source;
     int sink;
     int graphSize;
+    int height;
+    int width;
+    int threshold;
     float Kmax = INT32_MIN;
 
     void readSeed(char *imageName)
@@ -92,14 +90,6 @@ public:
         }
 
         fclose(fp);
-
-        // Exemplo de impressão dos dados lidos
-        // for (int i = 0; i < nseeds; i++)
-        // {
-        //     printf("Seed %d: x = %d, y = %d, seedType = %s\n",
-        //            i, seeds[i].x, seeds[i].y,
-        //            (seeds[i].seedType == OBJECT) ? "OBJECT" : "BACKGROUND");
-        // }
     }
 
     void imageToGraph(Image *image)
@@ -119,7 +109,7 @@ public:
             }
         }
 
-        // liga os vertices pela vizinhaça dos 8 lados na imagem
+        // liga os vertices pela vizinhaça dos 4 lados na imagem
         for (int i = 0; i < height; i++)
         {
             for (int j = 0; j < width; j++)
@@ -197,28 +187,13 @@ public:
         }
         return weight;
     }
-    // equilibrar o peso da aresta baseado nos pixeis que ela liga
-    float intensity(Image::Pixel p, Image::Pixel p2)
-    {
-        float result = 0;
-        int diffRed = p.red - p2.red;
-        int diffGreen = p.green - p2.green;
-        int diffBlue = p.blue - p2.blue;
-        // result = std::abs(((p.red + p.green + p.blue) / 3) - ((p2.red + p2.green + p2.blue) / 3));
-        result = std::sqrt(pow((p.red - p2.red), 2) + pow((p.green - p2.green), 2) + pow((p.blue - p2.blue), 2));
-        // result = std::sqrt(diffRed * diffRed + diffGreen * diffGreen + diffBlue * diffBlue);
-
-        return result;
-    }
 
     // Função que calcula a penalidade de fronteira entre dois pixels
     int boundaryPenalty(unsigned char ip, unsigned char iq)
     {
-        // Calculando a diferença entre os dois valores de intensidade
-        // float diff = static_cast<float>(ip) - static_cast<float>(iq);
-
         // Calculando a penalidade usando a fórmula Gaussiana
         int bp = 100 * exp(-pow(static_cast<int>(ip) - static_cast<int>(iq), 2) / (2 * pow(3, 2)));
+
         return bp;
     }
 
@@ -235,7 +210,7 @@ public:
             q.pop();
             for (int v = 0; v < graphSize; v++)
             {
-                if (!visited[v] && residualGraph[u].getVizinho(v) > 0)
+                if (!visited[v] && residualGraph[u].getVizinhoWeight(v) > 0)
                 {
                     q.emplace(v);
                     parent[v] = u;
@@ -262,8 +237,7 @@ public:
                 visited[v] = true;
                 for (int u = 0; u < graphSize; u++)
                 {
-                    // cout << residualGraph[v].getVizinho(i) << " ";
-                    if (residualGraph[v].getVizinho(u) > 0)
+                    if (residualGraph[v].getVizinhoWeight(u) > 0)
                     {
                         stack.push(u);
                         count++;
@@ -275,10 +249,9 @@ public:
 
     bool *segmentation()
     {
-        std::cout << "COMECOU: " << endl;
         Vertex *residualGraph = new Vertex[graphSize];
         int *parent = new int[graphSize]{};
-
+        //CRIA O GRAFO RESIDUAL
         for (int i = 0; i < graphSize; i++)
         {
             // Copia os valores do vértice
@@ -291,8 +264,8 @@ public:
                 residualGraph[i].addVertex(vizinho.p, vizinho.edge, vizinho.label);
             }
         }
-        std::cout << "BFS: " << endl;
 
+        //bfs para achar o fluxo
         while (bfs(residualGraph, parent))
         {
             float pathFlow = INT32_MAX;
@@ -301,7 +274,7 @@ public:
             while (v != source)
             {
                 int u = parent[v];
-                pathFlow = std::min(pathFlow, residualGraph[u].getVizinho(v));
+                pathFlow = std::min(pathFlow, residualGraph[u].getVizinhoWeight(v));
                 v = parent[v];
             }
 
@@ -311,65 +284,29 @@ public:
             {
                 int u = parent[v];
 
-                residualGraph[u].aumentaPesoVizinho(v, -pathFlow); // Fluxo direto
-                residualGraph[v].aumentaPesoVizinho(u, pathFlow);  // Fluxo reverso
-                // if (u == source)
-                // {
-                //     cout << u << " to: " << v << " com path: " << residualGraph[u].getVizinho(v) << " " << endl;
-                //     cout << residualGraph[v].getVizinho(u) << endl;
-                // }
+                residualGraph[u].alteraPesoVizinho(v, -pathFlow); // Fluxo direto
+                residualGraph[v].alteraPesoVizinho(u, pathFlow);  // Fluxo reverso
 
                 v = parent[v];
             }
         }
 
-        // for (const auto &neighbor : (residualGraph[source].vizinhos))
-        // {
-        //     cout << neighbor.edge << " " << neighbor.label << " ";
-        // }
         bool *visited = new bool[graphSize]{};
-        std::cout << "DFS: " << endl;
+
+        //dfs para achar o corte
         dfs(residualGraph, visited);
 
-        std::vector<std::tuple<int, int>> cuts;
-
-        // for (int i = 0; i < graphSize; i++)
-        // {
-        //     for (int j = 0; j < adj[i].vizinhos.size(); j++)
-        //     {
-        //         if (visited[i] && !visited[adj[i].vizinhos.at(j).label] && adj[i].getVizinho(j) > 0)
-        //         {
-        //             cuts.push_back(std::make_tuple(i, adj[i].vizinhos.at(j).label));
-        //         }
-        //     }
-        // }
-        // for (const auto &cut : cuts)
-        // {
-        //     std::cout << "(" << std::get<0>(cut) << ", " << std::get<1>(cut) << ") ";
-        // }
-
-        int count = 0;
-        for (int i = 0; i < graphSize; i++)
-        {
-            if (visited[i])
-            {
-                count++;
-            }
-        }
-        cout << endl << count << endl;
         return visited;
     }
 
-    Graph(size_t v, Image *img, int t)
+    Graph(Image *img)
     {
-        threshold = t;
         height = img->header.height;
         width = img->header.width;
         graphSize = (img->header.height * img->header.width) + 2;
         source = graphSize - 2;
         sink = graphSize - 1;
         adj = new Vertex[graphSize];
-        vertices = v;
     };
 
     ~Graph()
