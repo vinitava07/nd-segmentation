@@ -49,7 +49,7 @@ void writeImage(Image::Pixel *rImg, Image *img, bool *visitados)
 int main(int argc, char const *argv[])
 {
 
-    char imageName[40] = "test1";
+    char imageName[40] = "baby";
     char fileName[40] = "";
     char prefix[30] = "../images/";
 

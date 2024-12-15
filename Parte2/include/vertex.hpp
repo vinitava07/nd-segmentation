@@ -14,7 +14,7 @@ public:
     int label;
 
     // Construtor usando lista de inicialização
-    Vizinho() : p(), edge(0) {}
+    Vizinho() : p(), edge(-300) {}
     Vizinho(Image::Pixel p, float e, int l) : p(p), edge(e), label(l) {}
 
     // bool operator>(const Vizinho &v) const
@@ -51,7 +51,10 @@ public:
                 return vizinhos.at(i).edge;
             }
         }
-        return 0;
+        
+        
+
+        return -1;
     }
     void aumentaPesoVizinho(int label, float peso)
     {
@@ -61,10 +64,15 @@ public:
             if (vizinhos.at(i).label == label)
             {
                 vizinhos.at(i).edge += peso;
+                encontrado = true;
+                break;
             }
         }
-        
-        
+        // if (!encontrado && peso > 0)
+        // {
+
+        //     vizinhos.push_back(Vizinho(pixel, peso, label));
+        // }
     }
     void diminuiPesoVizinho(int label, float peso)
     {
@@ -73,6 +81,12 @@ public:
             if (vizinhos.at(i).label == label)
             {
                 vizinhos.at(i).edge -= peso;
+                // Opcional: Se o peso for zero, remova o vizinho
+                // if (vizinhos.at(i).edge <= 0)
+                // {
+                //     vizinhos.erase(vizinhos.begin() + i);
+                // }
+                break;
             }
         }
     }

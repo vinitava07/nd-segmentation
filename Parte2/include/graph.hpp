@@ -36,7 +36,7 @@ private:
 
 public:
     Vertex *adj;
-    Vertex **resultGraph;
+    // Vertex **resultGraph;
     Seed *seeds;
     int nseeds;
     int vertices;
@@ -165,14 +165,14 @@ public:
     {
         for (int i = 0; i < nseeds; i++)
         {
-            int vertexIndex = seeds[i].y * width + seeds[i].x;
+            int vertexIndex = seeds[i].x * width + seeds[i].y;
             if (seeds[i].seedType == OBJECT)
             {
-                adj[source].addVertex(image->img[seeds[i].y][seeds[i].x], Kmax, vertexIndex);
+                adj[source].addVertex(image->img[seeds[i].x][seeds[i].y], Kmax, vertexIndex);
             }
             else
             {
-                adj[vertexIndex].addVertex(image->img[seeds[i].y][seeds[i].x], Kmax, sink);
+                adj[vertexIndex].addVertex(image->img[seeds[i].x][seeds[i].y], Kmax, sink);
             }
         }
     }
@@ -212,13 +212,13 @@ public:
     }
 
     // Função que calcula a penalidade de fronteira entre dois pixels
-    float boundaryPenalty(unsigned char ip, unsigned char iq)
+    int boundaryPenalty(unsigned char ip, unsigned char iq)
     {
         // Calculando a diferença entre os dois valores de intensidade
         // float diff = static_cast<float>(ip) - static_cast<float>(iq);
 
         // Calculando a penalidade usando a fórmula Gaussiana
-        float bp = 100 * exp(-pow(static_cast<int>(ip) - static_cast<int>(iq), 2) / (2 * pow(30, 2)));
+        int bp = 100 * exp(-pow(static_cast<int>(ip) - static_cast<int>(iq), 2) / (2 * pow(3, 2)));
         return bp;
     }
 
@@ -226,7 +226,6 @@ public:
     {
         std::queue<int> q;
         bool *visited = new bool[graphSize]{};
-
         q.push(source);
         visited[source] = true;
         parent[source] = -1;
@@ -238,8 +237,7 @@ public:
             {
                 if (!visited[v] && residualGraph[u].getVizinho(v) > 0)
                 {
-
-                    q.push(v);
+                    q.emplace(v);
                     parent[v] = u;
                     visited[v] = true;
                 }
@@ -253,6 +251,7 @@ public:
     {
         std::stack<int> stack;
         stack.push(source);
+        int count = 0;
         while (!stack.empty())
         {
             int v = stack.top();
@@ -261,11 +260,13 @@ public:
             if (!visited[v])
             {
                 visited[v] = true;
-                for (const auto &neighbor : (residualGraph[v].vizinhos))
+                for (int u = 0; u < graphSize; u++)
                 {
-                    if (!visited[neighbor.label] && neighbor.edge > 0)
+                    // cout << residualGraph[v].getVizinho(i) << " ";
+                    if (residualGraph[v].getVizinho(u) > 0)
                     {
-                        stack.push(neighbor.label);
+                        stack.push(u);
+                        count++;
                     }
                 }
             }
@@ -296,47 +297,56 @@ public:
         {
             float pathFlow = INT32_MAX;
             int v = sink;
-            // std::cout << "loop1: " << endl;
+            // Calcula o fluxo máximo possível no caminho encontrado
             while (v != source)
             {
                 int u = parent[v];
                 pathFlow = std::min(pathFlow, residualGraph[u].getVizinho(v));
                 v = parent[v];
             }
-            
-            v = sink;
 
+            v = sink;
+            // Atualiza os fluxos na rede residual
             while (v != source)
             {
                 int u = parent[v];
-                residualGraph[u].aumentaPesoVizinho(v, -pathFlow);
-                residualGraph[v].aumentaPesoVizinho(u, pathFlow);
+
+                residualGraph[u].aumentaPesoVizinho(v, -pathFlow); // Fluxo direto
+                residualGraph[v].aumentaPesoVizinho(u, pathFlow);  // Fluxo reverso
+                // if (u == source)
+                // {
+                //     cout << u << " to: " << v << " com path: " << residualGraph[u].getVizinho(v) << " " << endl;
+                //     cout << residualGraph[v].getVizinho(u) << endl;
+                // }
+
                 v = parent[v];
             }
         }
 
+        // for (const auto &neighbor : (residualGraph[source].vizinhos))
+        // {
+        //     cout << neighbor.edge << " " << neighbor.label << " ";
+        // }
         bool *visited = new bool[graphSize]{};
         std::cout << "DFS: " << endl;
         dfs(residualGraph, visited);
 
         std::vector<std::tuple<int, int>> cuts;
 
-        for (int i = 0; i < graphSize; i++)
-        {
-            for (int j = 0; j < adj[i].vizinhos.size(); j++)
-            {
-                if (visited[i] && !visited[adj[i].vizinhos.at(j).label])
-                {
-                    cuts.push_back(std::make_tuple(i, adj[i].vizinhos.at(j).label));
-                }
-            }
-        }
+        // for (int i = 0; i < graphSize; i++)
+        // {
+        //     for (int j = 0; j < adj[i].vizinhos.size(); j++)
+        //     {
+        //         if (visited[i] && !visited[adj[i].vizinhos.at(j).label] && adj[i].getVizinho(j) > 0)
+        //         {
+        //             cuts.push_back(std::make_tuple(i, adj[i].vizinhos.at(j).label));
+        //         }
+        //     }
+        // }
         // for (const auto &cut : cuts)
         // {
         //     std::cout << "(" << std::get<0>(cut) << ", " << std::get<1>(cut) << ") ";
         // }
-        // cout << std::endl
-        //      << cuts.size() << std::endl;
 
         int count = 0;
         for (int i = 0; i < graphSize; i++)
@@ -346,7 +356,7 @@ public:
                 count++;
             }
         }
-        cout << count << endl;
+        cout << endl << count << endl;
         return visited;
     }
 
