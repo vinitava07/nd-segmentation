@@ -165,14 +165,14 @@ public:
     {
         for (int i = 0; i < nseeds; i++)
         {
-            int vertexIndex = seeds[i].x * width + seeds[i].y;
+            int vertexIndex = seeds[i].y * width + seeds[i].x;
             if (seeds[i].seedType == OBJECT)
             {
-                adj[source].addVertex(image->img[seeds[i].x][seeds[i].y], Kmax, vertexIndex);
+                adj[source].addVertex(image->img[seeds[i].y][seeds[i].x], Kmax, vertexIndex);
             }
             else
             {
-                adj[vertexIndex].addVertex(image->img[seeds[i].x][seeds[i].y], Kmax, sink);
+                adj[vertexIndex].addVertex(image->img[seeds[i].y][seeds[i].x], Kmax, sink);
             }
         }
     }
