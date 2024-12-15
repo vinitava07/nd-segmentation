@@ -2,7 +2,7 @@
 #include <string.h>
 #include "../include/image.hpp"
 #include <chrono>
-#include "graph.hpp"
+#include "../include/graph.hpp"
 #include <random>
 
 using namespace std;
