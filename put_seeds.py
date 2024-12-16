@@ -40,7 +40,8 @@ def pintar_com_interacao(caminho_imagem, caminho_saida, caminho_txt):
 
     # Converte pixels para uma imagem OpenCV
     imagem = pixels.reshape((altura, largura, 3))
-    largura, altura, pixels = carregar_ppm(caminho_imagem)
+    imagem = cv2.cvtColor(imagem, cv2.COLOR_RGB2BGR)
+
 
     if largura > 300 or altura > 300:
         escala = 1  # Não redimensiona
@@ -85,7 +86,7 @@ def pintar_com_interacao(caminho_imagem, caminho_saida, caminho_txt):
     imagem = cv2.resize(imagem, (largura, altura), interpolation=cv2.INTER_AREA)
 
     # Converte imagem de volta para o formato PPM
-    imagem_ppm = cv2.cvtColor(imagem, cv2.COLOR_BGR2RGB).flatten()
+    imagem_ppm = cv2.cvtColor(imagem, cv2.COLOR_RGB2BGR).flatten()
     salvar_ppm(caminho_saida, largura, altura, imagem_ppm)
 
     # Salva as posições pintadas
