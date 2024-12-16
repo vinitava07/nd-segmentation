@@ -14,7 +14,6 @@
 #include "../include/vertex.hpp"
 
 #define WIDTH 4
-#define SIGMA 10.0
 
 using namespace std;
 class Graph
@@ -41,6 +40,7 @@ public:
     int height;
     int width;
     int threshold;
+    float sigma = 5;
     float Kmax = INT32_MIN;
 
     void readSeed(char *imageName)
@@ -192,7 +192,7 @@ public:
     int boundaryPenalty(unsigned char ip, unsigned char iq)
     {
         // Calculando a penalidade usando a fórmula Gaussiana
-        int bp = 100 * exp(-pow(static_cast<int>(ip) - static_cast<int>(iq), 2) / (2 * pow(3, 2)));
+        int bp = 100 * exp(-pow(static_cast<int>(ip) - static_cast<int>(iq), 2) / (2 * pow(sigma, 2)));
 
         return bp;
     }
@@ -299,10 +299,11 @@ public:
         return visited;
     }
 
-    Graph(Image *img)
+    Graph(Image *img, float sig)
     {
         height = img->header.height;
         width = img->header.width;
+        sigma = sig;
         graphSize = (img->header.height * img->header.width) + 2;
         source = graphSize - 2;
         sink = graphSize - 1;

@@ -38,12 +38,12 @@ void writeImage(Image *img, bool *visitados)
 int main(int argc, char const *argv[])
 {
 
-    char imageName[40] = "test1";
+    char imageName[40];
     char fileName[40] = "";
     char prefix[30] = "../images/";
 
     cout << "Qual o nome da imagem que voce deseja segmentar (sem o .ppm)" << endl;
-    // cin >> imageName;
+    cin >> imageName;
 
     strcpy(fileName, imageName);
     strcat(fileName, ".ppm");
@@ -53,6 +53,12 @@ int main(int argc, char const *argv[])
     image->readImage();
     size_t graphSize = image->imgSize;
 
+    float sigma = 10;
+
+    cout << "Digite o valor do sigma (normal = 10)" << endl;
+
+    cin >> sigma;
+
     cout << "Transformando a imagem para escala de cinza" << endl;
 
     // transforma em escala de cinza
@@ -61,16 +67,17 @@ int main(int argc, char const *argv[])
     chrono::steady_clock sc; // create an object of `steady_clock` class
     auto start = sc.now();
     // grafo implementado com lista de adjacencia
-    Graph *g = new Graph(image);
+    Graph *g = new Graph(image, sigma);
     // le as seeds
     g->readSeed(imageName);
     // transforma a imagem em um grafo
     g->imageToGraph(image);
+    cout << "Segmentando" << endl;
     // link o source e o skin com as seeds
     g->linkSourceAndSink(image);
     // segmenta o grafo
     bool *visitados = g->segmentation();
-    //escreve a imagem no arquivo
+    // escreve a imagem no arquivo
     writeImage(image, visitados);
     g->freeImage(image);
 
